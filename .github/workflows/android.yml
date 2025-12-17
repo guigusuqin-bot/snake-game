@@ -20,14 +20,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            zip unzip git \
-            build-essential \
-            ccache \
-            libffi-dev libssl-dev \
-            libsqlite3-dev zlib1g-dev \
-            libncurses5-dev libncursesw5-dev \
-            libreadline-dev libbz2-dev \
-            liblzma-dev \
+            zip unzip git build-essential ccache \
+            libffi-dev libssl-dev libsqlite3-dev zlib1g-dev \
+            libncurses5-dev libncursesw5-dev libreadline-dev libbz2-dev liblzma-dev \
             openjdk-17-jdk
 
       - name: Install build tools
@@ -39,6 +34,16 @@ jobs:
         run: |
           if [ ! -f buildozer.spec ]; then
             buildozer init
+          fi
+
+      - name: Ensure buildozer.spec accepts Android SDK license
+        run: |
+          if [ ! -f buildozer.spec ]; then
+            buildozer init
+          fi
+          if ! grep -q '^android.accept_sdk_license' buildozer.spec; then
+            echo '' >> buildozer.spec
+            echo 'android.accept_sdk_license = True' >> buildozer.spec
           fi
 
       - name: Build APK (debug)
