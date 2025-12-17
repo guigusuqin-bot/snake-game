@@ -1,0 +1,81 @@
+name: Build Android APK (Kivy)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            zip unzip git \
+            build-essential \
+            ccache \
+            libffi-dev libssl-dev \
+            libsqlite3-dev zlib1g-dev \
+            libncurses5-dev libncursesw5-dev \
+            libreadline-dev libbz2-dev \
+            liblzma-dev \
+            openjdk-17-jdk
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install buildozer cython==0.29.36
+
+      - name: Create buildozer.spec if missing
+        run: |
+          if [ ! -f buildozer.spec ]; then
+            buildozer init
+          fi
+
+      - name: Patch buildozer.spec (app basics)
+        run: |
+          python - <<'PY'
+          import re, pathlib
+          p = pathlib.Path("buildozer.spec")
+          s = p.read_text(encoding="utf-8")
+
+          def set_kv(key, value):
+            nonlocal s
+            pat = rf"^{re.escape(key)}\s*=.*$"
+            if re.search(pat, s, flags=re.M):
+              s = re.sub(pat, f"{key} = {value}", s, flags=re.M)
+            else:
+              s += f"\n{key} = {value}\n"
+
+          set_kv("title", "Snake Game")
+          set_kv("package.name", "snakegame")
+          set_kv("package.domain", "org.example")
+          set_kv("source.include_exts", "py,png,jpg,kv,atlas")
+          set_kv("requirements", "python3,kivy")
+          set_kv("android.api", "33")
+          set_kv("android.minapi", "21")
+          set_kv("android.ndk", "25b")
+          set_kv("android.accept_sdk_license", "True")
+
+          p.write_text(s, encoding="utf-8")
+          print("buildozer.spec updated")
+          PY
+
+      - name: Build APK (debug)
+        run: |
+          buildozer -v android debug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: bin/*.apk
