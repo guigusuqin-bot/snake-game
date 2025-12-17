@@ -49,7 +49,7 @@ jobs:
           s = p.read_text(encoding="utf-8")
 
           def set_kv(key, value):
-            nonlocal s
+            
             pat = rf"^{re.escape(key)}\s*=.*$"
             if re.search(pat, s, flags=re.M):
               s = re.sub(pat, f"{key} = {value}", s, flags=re.M)
