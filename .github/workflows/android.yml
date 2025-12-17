@@ -16,14 +16,11 @@ jobs:
         with:
           python-version: "3.10"
 
-      # ✅ 关键：初始化 Android SDK（否则 sdkmanager 不存在）
+      # ✅ 关键：初始化 Android SDK + 可靠地接受 licenses
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-
-      # ✅ 关键：自动接受 Android SDK licenses
-      - name: Accept Android SDK licenses
-        run: |
-          yes | sdkmanager --licenses
+        with:
+          accept-licenses: true
 
       # ✅ 明确安装你缺的 build-tools + aidl
       - name: Install Android SDK packages
